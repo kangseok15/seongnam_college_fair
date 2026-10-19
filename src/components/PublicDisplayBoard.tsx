@@ -35,7 +35,6 @@ export const PublicDisplayBoard: React.FC<PublicDisplayBoardProps> = ({
   const [clockString, setClockString] = useState<string>('');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  const [lastAnnouncedId, setLastAnnouncedId] = useState<string>('');
 
   // 3번: 전광판 하단 실시간 자막 공지 (Marquee Ticker)
   const [tickerMessage, setTickerMessage] = useState<string>(() => {
@@ -137,8 +136,14 @@ export const PublicDisplayBoard: React.FC<PublicDisplayBoardProps> = ({
 
   // 1번: 차임벨(Web Audio 전자음 딩동) 및 한국어 음성 TTS 호출 안내
   // 요청사항 반영: "대기 O번 OOO 학생, 본부로 와주시기 바랍니다." 만 정확히 송출 (TTS가 "띵동 물결표 싸인"이라고 읽지 않도록 수정)
-  const playChimeAndVoice = (studentName: string, waitingNumber?: number) => {
+  // 여러 명이 한꺼번에 배정되면 차임벨 1번 → 한 명씩 차례로 음성 호출
+  const playChimeAndVoice = (
+    studentName: string,
+    waitingNumber?: number,
+    more: { name: string; waitingNumber?: number }[] = []
+  ) => {
     if (!soundEnabled) return;
+    const callList = [{ name: studentName, waitingNumber }, ...more];
 
     // A. Web Audio API Two-tone Chime Bell (E5 -> C5)
     try {
@@ -183,21 +188,23 @@ export const PublicDisplayBoard: React.FC<PublicDisplayBoardProps> = ({
     // 요청사항: 숫자를 고유어(여섯 번 등)가 아닌 한자어 숫자(육 번, 일 번, 이 번 등)로 발음하도록 한글 변환
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const numKorean = waitingNumber != null ? numberToSinoKorean(waitingNumber) : '';
-      const numText = numKorean ? `대기 ${numKorean} 번 ` : '';
-      const speechText = `${numText}${studentName} 학생, 본부로 와주시기 바랍니다.`;
-
-      const utterance = new SpeechSynthesisUtterance(speechText);
-      utterance.lang = 'ko-KR';
-      utterance.rate = 0.95;
-      utterance.pitch = 1.05;
-
       const voices = window.speechSynthesis.getVoices();
       const koVoice = voices.find((v) => v.lang.startsWith('ko') || v.lang === 'ko_KR');
-      if (koVoice) utterance.voice = koVoice;
 
+      const utterances = callList.map(({ name, waitingNumber: num }) => {
+        const numKorean = num != null ? numberToSinoKorean(num) : '';
+        const numText = numKorean ? `대기 ${numKorean} 번 ` : '';
+        const u = new SpeechSynthesisUtterance(`${numText}${name} 학생, 본부로 와주시기 바랍니다.`);
+        u.lang = 'ko-KR';
+        u.rate = 0.95;
+        u.pitch = 1.05;
+        if (koVoice) u.voice = koVoice;
+        return u;
+      });
+
+      // speak()을 연달아 호출하면 브라우저가 순서대로 이어서 읽어 줌
       setTimeout(() => {
-        window.speechSynthesis.speak(utterance);
+        utterances.forEach((u) => window.speechSynthesis.speak(u));
       }, 550);
     }
   };
@@ -214,24 +221,32 @@ export const PublicDisplayBoard: React.FC<PublicDisplayBoardProps> = ({
   };
 
   // Auto-announce whenever a new student appears in recentlyCalled
+  // 이미 호출한 학생 ID 목록. 새로 뜬 학생이 여러 명이면 모두 호출 (대기번호 순)
   const isFirstMount = useRef(true);
+  const announcedIdsRef = useRef<Set<string>>(new Set());
+  const recentlyCalledKey = recentlyCalled.map((a) => a.id).join(',');
   useEffect(() => {
     if (isFirstMount.current) {
+      // 명단을 아직 불러오기 전이면 기다림 (불러오자마자 기존 학생들을 다시 호출하지 않도록)
+      if (applicants.length === 0) return;
       isFirstMount.current = false;
-      if (recentlyCalled.length > 0) {
-        setLastAnnouncedId(recentlyCalled[0].id);
-      }
+      recentlyCalled.forEach((a) => announcedIdsRef.current.add(a.id));
       return;
     }
 
-    if (recentlyCalled.length > 0) {
-      const newest = recentlyCalled[0];
-      if (newest.id !== lastAnnouncedId) {
-        setLastAnnouncedId(newest.id);
-        playChimeAndVoice(newest.name, newest.waitingNumber);
-      }
-    }
-  }, [recentlyCalled, soundEnabled]);
+    const newOnes = recentlyCalled
+      .filter((a) => !announcedIdsRef.current.has(a.id))
+      .sort((a, b) => (a.waitingNumber ?? 9999) - (b.waitingNumber ?? 9999));
+    if (newOnes.length === 0) return;
+
+    newOnes.forEach((a) => announcedIdsRef.current.add(a.id));
+    const [first, ...rest] = newOnes;
+    playChimeAndVoice(
+      first.name,
+      first.waitingNumber,
+      rest.map((a) => ({ name: a.name, waitingNumber: a.waitingNumber }))
+    );
+  }, [recentlyCalledKey, soundEnabled, applicants.length === 0]);
 
   // Save custom ticker message
   const handleSaveTicker = (e: React.FormEvent) => {
