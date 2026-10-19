@@ -95,19 +95,26 @@ export const TicketReceipt: React.FC<TicketReceiptProps> = ({
         <div className="border-b border-dashed border-slate-300 mb-2.5" />
 
         {/* 3. Core Assignment Highlight Box: Identical layout for all tickets */}
+        {/* 부스·타임 숫자가 2자리여도 절대 줄바꿈되지 않도록 nowrap + 2자리일 때 글자 크기 축소 */}
         {isAssigned ? (
           <div className="mb-3 mt-1 p-2 bg-slate-50/90 rounded-2xl border-2 border-slate-300 flex items-stretch gap-2.5 text-center">
             {/* Booth: Navy Blue */}
-            <div className="flex-1 py-3 px-2 bg-blue-50/95 rounded-xl border border-blue-200/90 flex flex-col justify-center shadow-2xs">
+            <div className="flex-1 min-w-0 py-3 px-1 bg-blue-50/95 rounded-xl border border-blue-200/90 flex flex-col justify-center shadow-2xs">
               <div className="text-xs font-extrabold text-blue-700 tracking-wider">배정 부스</div>
-              <div className="text-[32px] sm:text-[34px] font-black text-blue-950 tracking-tight mt-1 leading-none">
-                제 {applicant.assignedBoothId} 부스
+              <div
+                className={`${String(applicant.assignedBoothId).length >= 2 ? 'text-[27px]' : 'text-[32px]'} font-black text-blue-950 tracking-tighter mt-1 leading-none whitespace-nowrap`}
+                style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all' }}
+              >
+                제 {applicant.assignedBoothId}부스
               </div>
             </div>
             {/* Time: Rich Vivid Purple */}
-            <div className="flex-1 py-3 px-2 bg-purple-50/95 rounded-xl border border-purple-200/90 flex flex-col justify-center shadow-2xs">
+            <div className="flex-1 min-w-0 py-3 px-1 bg-purple-50/95 rounded-xl border border-purple-200/90 flex flex-col justify-center shadow-2xs">
               <div className="text-xs font-extrabold text-purple-700 tracking-wider">배정 타임</div>
-              <div className="text-[32px] sm:text-[34px] font-black text-purple-900 tracking-tight mt-1 leading-none">
+              <div
+                className={`${String(timeIdDisplay).length >= 2 ? 'text-[27px]' : 'text-[32px]'} font-black text-purple-900 tracking-tighter mt-1 leading-none whitespace-nowrap`}
+                style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all' }}
+              >
                 {timeIdDisplay}타임
               </div>
             </div>
@@ -203,62 +210,4 @@ export const TicketReceipt: React.FC<TicketReceiptProps> = ({
       </div>
 
       {/* QR Code and Location Guidance */}
-      <div className="mt-2.5 flex items-center justify-between gap-3">
-        <div className="space-y-0.5 text-xs text-slate-600 flex-1">
-          <div className="flex items-center gap-1 text-slate-900 font-bold text-xs">
-            <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
-            <span>행사장: 성남시청 1층</span>
-          </div>
-          <p className="text-[10px] leading-relaxed text-slate-500">
-            {isAssigned ? (
-              <>
-                • 해당 부스 앞 대기석으로 이동해 주시기 바랍니다.<br />
-                • 상담 시간 5분 전 해당 부스 대기석에서 준비해 주세요.
-              </>
-            ) : (
-              <>
-                • 본 QR코드를 스캔하시면 스마트폰에서 <strong>실시간 남은 대기 인원</strong>을 확인하실 수 있습니다.<br />
-                • 공석 발생 시 대기 순서대로 순차 배정됩니다.<br />
-                • 행사장 주변에 계시더라도 모바일로 배정 알림을 바로 확인하실 수 있습니다.
-              </>
-            )}
-          </p>
-        </div>
-        {internalQr && (
-          <div className="text-center shrink-0">
-            <img
-              src={internalQr}
-              alt={isAssigned ? "Survey QR Code" : "Waiting Tracker QR Code"}
-              className="w-16 h-16 border border-slate-200 rounded-lg p-1 bg-white shadow-2xs"
-            />
-            <div className="text-[9px] font-bold text-blue-700 mt-0.5">
-              {isAssigned ? "만족도 설문 QR" : "실시간 대기조회 QR"}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Callout Box: 1줄로 표시, 설문에 참여해 주세요. */}
-      <div className="mt-2 px-2.5 py-1.5 bg-blue-50/70 border border-blue-200 rounded-lg text-[10px] text-blue-900 flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-        <MessageSquareQuote className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-        <div className="truncate">
-          {isAssigned ? (
-            <span>
-              상담 종료 후 우측 QR코드를 스캔하여 <strong>상담 만족도 설문에 참여해 주세요.</strong>
-            </span>
-          ) : (
-            <span>
-              우측 QR 코드를 스캔하시면 <strong>실시간 대기 순번 및 배정 알림</strong>을 확인하실 수 있습니다.
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Receipt Footer */}
-      <div className="mt-2.5 pt-1.5 border-t border-dashed border-slate-300 text-center text-[9px] text-slate-400">
-        발행일시: {new Date().toLocaleString('ko-KR')} · 성남시 대입 진학 박람회 운영본부
-      </div>
-    </div>
-  </div>
-  );
-};
+      <div className="mt-2.5 flex items-center
