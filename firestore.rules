@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'sophia31511@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 64 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Applicant Validator
+    function isValidApplicant(data) {
+      return data.keys().hasAll(['id', 'name', 'studentSchool', 'grade', 'contact', 'source', 'status', 'preferredTimeId']) &&
+        data.id is string && data.id.size() <= 64 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 50 &&
+        data.studentSchool is string && data.studentSchool.size() <= 50 &&
+        data.grade is string && data.grade.size() <= 20 &&
+        data.contact is string && data.contact.size() <= 30 &&
+        data.preferredTimeId is number && data.preferredTimeId >= 1 && data.preferredTimeId <= 10 &&
+        data.status in ['PENDING', 'CHECKED_IN', 'IN_CONSULTATION', 'COMPLETED', 'NO_SHOW', 'CANCELLED'] &&
+        data.source in ['GOOGLE_FORM', 'ON_SITE_KIOSK'];
+    }
+
+    // Consultant Validator
+    function isValidConsultant(data) {
+      return data.keys().hasAll(['boothId', 'name', 'school', 'specialty']) &&
+        data.boothId is number && data.boothId >= 1 && data.boothId <= 30 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 50 &&
+        data.school is string && data.school.size() <= 50 &&
+        data.specialty is string && data.specialty.size() <= 100;
+    }
+
+    // Allocation Log Validator
+    function isValidLog(data) {
+      return data.keys().hasAll(['timestamp', 'applicantName', 'applicantSchool', 'assignedBoothId', 'assignedTimeId', 'reason']) &&
+        data.timestamp is string && data.timestamp.size() <= 50 &&
+        data.applicantName is string && data.applicantName.size() <= 50 &&
+        data.applicantSchool is string && data.applicantSchool.size() <= 50 &&
+        data.assignedBoothId is number && data.assignedBoothId >= 1 && data.assignedBoothId <= 30 &&
+        data.assignedTimeId is number && data.assignedTimeId >= 1 && data.assignedTimeId <= 10 &&
+        data.reason is string && data.reason.size() <= 300;
+    }
+
+    // Fair Config Validator
+    function isValidFairConfig(data) {
+      return data.keys().hasAll(['title', 'currentActiveTimeId']) &&
+        data.title is string && data.title.size() <= 100 &&
+        data.currentActiveTimeId is number && data.currentActiveTimeId >= 1 && data.currentActiveTimeId <= 10;
+    }
+
+    // Student Applicants collection - Only admin can create, update, delete; anyone can read (Viewer mode)
+    match /applicants/{applicantId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(applicantId) && isValidApplicant(incoming());
+      allow update: if isAdmin() && isValidId(applicantId) && isValidApplicant(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // 30 Booth Consultants collection - Only admin can modify
+    match /consultants/{boothId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(boothId) && isValidConsultant(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Allocation & Audit Logs collection - Only admin can create or modify
+    match /allocation_logs/{logId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(logId) && isValidLog(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // Fair Configuration collection - Only admin can update
+    match /fair_config/{configId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(configId) && isValidFairConfig(incoming());
+      allow delete: if isAdmin();
+    }
+  }
+}

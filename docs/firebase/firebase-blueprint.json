@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "StudentApplicant": {
+      "title": "StudentApplicant",
+      "description": "Exhibition student applicant registration and booth allocation record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 50 },
+        "studentSchool": { "type": "string", "maxLength": 50 },
+        "grade": { "type": "string", "maxLength": 20 },
+        "contact": { "type": "string", "maxLength": 30 },
+        "parentContact": { "type": "string", "maxLength": 30 },
+        "source": { "type": "string", "enum": ["GOOGLE_FORM", "ON_SITE_KIOSK"] },
+        "registeredAt": { "type": "string", "maxLength": 50 },
+        "checkInAt": { "type": "string", "maxLength": 50 },
+        "preferredTimeId": { "type": "number" },
+        "targetMajor": { "type": "string", "maxLength": 100 },
+        "consultationType": { "type": "string", "maxLength": 50 },
+        "consultationTopic": { "type": "string", "maxLength": 500 },
+        "assignedBoothId": { "type": "number" },
+        "assignedTimeId": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["PENDING", "CHECKED_IN", "IN_CONSULTATION", "COMPLETED", "NO_SHOW", "CANCELLED"]
+        },
+        "isWaitingOnSite": { "type": "boolean" },
+        "waitingNumber": { "type": "number" },
+        "allocatedFromNoShow": { "type": "boolean" },
+        "allocationReason": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["id", "name", "studentSchool", "grade", "contact", "source", "status", "preferredTimeId"]
+    },
+    "Consultant": {
+      "title": "Consultant",
+      "description": "Assigned consultant for each of the 30 booths",
+      "type": "object",
+      "properties": {
+        "boothId": { "type": "number" },
+        "name": { "type": "string", "maxLength": 50 },
+        "school": { "type": "string", "maxLength": 50 },
+        "specialty": { "type": "string", "maxLength": 100 },
+        "contact": { "type": "string", "maxLength": 30 }
+      },
+      "required": ["boothId", "name", "school", "specialty"]
+    },
+    "AllocationLog": {
+      "title": "AllocationLog",
+      "description": "Audit trail log recording booth allocations, no-show replacements, and updates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64 },
+        "timestamp": { "type": "string", "maxLength": 50 },
+        "applicantName": { "type": "string", "maxLength": 50 },
+        "applicantSchool": { "type": "string", "maxLength": 50 },
+        "applicantId": { "type": "string", "maxLength": 64 },
+        "assignedBoothId": { "type": "number" },
+        "consultantName": { "type": "string", "maxLength": 50 },
+        "consultantSchool": { "type": "string", "maxLength": 50 },
+        "assignedTimeId": { "type": "number" },
+        "reason": { "type": "string", "maxLength": 300 },
+        "isNoShowReplacement": { "type": "boolean" }
+      },
+      "required": ["timestamp", "applicantName", "applicantSchool", "assignedBoothId", "assignedTimeId", "reason"]
+    },
+    "FairConfig": {
+      "title": "FairConfig",
+      "description": "Global event operational settings and real-time state",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 100 },
+        "currentActiveTimeId": { "type": "number" },
+        "lastUpdated": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["title", "currentActiveTimeId"]
+    }
+  },
+  "firestore": {
+    "/applicants/{applicantId}": {
+      "schema": "StudentApplicant",
+      "description": "Collection of student applicant records"
+    },
+    "/consultants/{boothId}": {
+      "schema": "Consultant",
+      "description": "Collection of 30 booth consultant assignments"
+    },
+    "/allocation_logs/{logId}": {
+      "schema": "AllocationLog",
+      "description": "Collection of audit trail logs"
+    },
+    "/fair_config/{configId}": {
+      "schema": "FairConfig",
+      "description": "Global operational parameters for the fair"
+    }
+  }
+}

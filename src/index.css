@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+/* Pretendard Font fallback and base styles */
+body {
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for dense data views */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide print portal on screens */
+#print-portal-root {
+  display: none !important;
+}
+
+/* Print specific styles for consultation ticket/receipt & booth signs */
+@media print {
+  @page {
+    size: auto;
+    margin: 4mm 6mm;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  /* When print portal is active and mounted, hide React app root */
+  body:has(#print-portal-root) #root,
+  body.has-print-portal #root,
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  /* Show the print portal */
+  #print-portal-root,
+  body:has(#print-portal-root) #print-portal-root,
+  body.has-print-portal #print-portal-root {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .print-ticket-page {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    margin: 0 auto 15px auto !important;
+    padding: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  .print-ticket-page:not(:last-child) {
+    page-break-after: always !important;
+    break-after: page !important;
+    margin-bottom: 20px !important;
+  }
+
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  img {
+    max-width: 100% !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+}
