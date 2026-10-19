@@ -21,6 +21,7 @@ import { BoothMatrixView } from './components/BoothMatrixView';
 import { KioskMode } from './components/KioskMode';
 import { PublicDisplayBoard } from './components/PublicDisplayBoard';
 import { TicketModal } from './components/TicketModal';
+import { isDirectPrintEnabled } from './utils/printPrefs';
 import { AutoAllocationModal } from './components/AutoAllocationModal';
 import { MultiTicketModal } from './components/MultiTicketModal';
 import { TeacherScheduleView } from './components/TeacherScheduleView';
@@ -907,9 +908,10 @@ export default function App() {
   };
 
   // Open ticket modal (with optional autoPrint)
+  // autoPrint=true 이면 항상 바로 인쇄, 그 외에는 [설정 → 티켓 바로 인쇄] 값을 따름
   const handleOpenTicket = (applicant: StudentApplicant, autoPrint: boolean = false) => {
     setTicketApplicant(applicant);
-    setTicketAutoPrint(autoPrint);
+    setTicketAutoPrint(autoPrint || isDirectPrintEnabled());
   };
 
   const currentTicketConsultant = ticketApplicant?.assignedBoothId

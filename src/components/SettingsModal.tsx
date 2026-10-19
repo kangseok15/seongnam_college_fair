@@ -18,7 +18,8 @@ import {
   Plus,
   Trash2,
   Laptop,
-  Wifi
+  Wifi,
+  Printer
 } from 'lucide-react';
 import {
   PRIMARY_ADMIN_EMAIL,
@@ -27,6 +28,7 @@ import {
   removeApprovedAdminEmail
 } from '../utils/firebase';
 import { SyncStatus } from '../utils/syncManager';
+import { isDirectPrintEnabled, setDirectPrintEnabled } from '../utils/printPrefs';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -70,6 +72,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [approvedEmails, setApprovedEmails] = useState<string[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState<string>('');
   const [showEmailManager, setShowEmailManager] = useState<boolean>(false);
+  const [directPrint, setDirectPrint] = useState<boolean>(() => isDirectPrintEnabled());
 
   useEffect(() => {
     if (isOpen) {
@@ -296,6 +299,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* 티켓 바로 인쇄 설정 (이 PC에만 저장) */}
+          <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                  <Printer className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">티켓 바로 인쇄</h4>
+                  <p className="text-xs text-slate-500">
+                    4자리 번호 출석 확인·[티켓] 버튼을 누르면 미리보기 창 없이 바로 인쇄합니다. (이 PC에만 적용)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={directPrint}
+                onClick={() => {
+                  const next = !directPrint;
+                  setDirectPrint(next);
+                  setDirectPrintEnabled(next);
+                }}
+                className={`relative w-12 h-7 rounded-full shrink-0 transition-colors cursor-pointer ${
+                  directPrint ? 'bg-emerald-600' : 'bg-slate-300'
+                }`}
+                title={directPrint ? '켜짐: 바로 인쇄' : '꺼짐: 미리보기 후 인쇄'}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    directPrint ? 'translate-x-5' : ''
+                  }`}
+                />
+              </button>
             </div>
           </div>
 

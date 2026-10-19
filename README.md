@@ -79,6 +79,15 @@ VITE_FIREBASE_FIRESTORE_DATABASE_ID
 
 ---
 
+## 티켓 바로 인쇄
+
+- 기본값: 4자리 번호로 출석 확인하거나 [티켓] 버튼을 누르면 **미리보기 창 없이 바로 인쇄**됩니다.
+- 미리보기가 필요한 PC는 **설정 → 티켓 바로 인쇄** 스위치를 끄면 됩니다. (PC별로 저장)
+- 브라우저의 인쇄 대화상자까지 없애려면 키오스크 PC의 Chrome을 `--kiosk-printing` 옵션으로 실행하세요.
+  1. Chrome 창을 모두 닫습니다.
+  2. 바탕화면 Chrome 바로가기 → 우클릭 → 속성 → **대상** 맨 끝에 한 칸 띄우고 `--kiosk-printing` 추가
+  3. 그 바로가기로 Chrome을 열면 **기본 프린터**로 즉시 출력됩니다. (Windows 기본 프린터를 영수증 프린터로 지정)
+
 ## 관리자 권한
 
 - 기본 관리자 계정: `sophia31511@gmail.com` (`src/utils/firebase.ts`의 `PRIMARY_ADMIN_EMAIL`)

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { StudentApplicant, Consultant, ConsultationTimeSlot } from '../types';
 import { TicketReceipt } from './TicketReceipt';
-import { printDocumentContent } from '../utils/printHelper';
+import { printDocumentContent, isInIframe } from '../utils/printHelper';
 import {
   saveCustomWaitingBadgeImage,
   removeCustomWaitingBadgeImage,
@@ -65,14 +65,26 @@ export const TicketModal: React.FC<TicketModalProps> = ({
   };
 
 
-  // Automatic print trigger if requested
+  // 바로 인쇄 모드: 미리보기 창 없이 인쇄 → 인쇄(또는 취소)가 끝나면 자동으로 닫힘
   useEffect(() => {
-    if (autoPrint) {
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 400);
-      return () => clearTimeout(timer);
-    }
+    if (!autoPrint) return;
+    let closed = false;
+    const closeOnce = () => {
+      if (closed) return;
+      closed = true;
+      onClose();
+    };
+    window.addEventListener('afterprint', closeOnce, { once: true });
+    // QR 코드 이미지가 그려질 시간을 잠깐 준 뒤 인쇄
+    const timer = setTimeout(() => {
+      handlePrint();
+      // 새 창으로 인쇄하는 환경(iframe 등)에서는 afterprint가 오지 않으므로 잠시 후 닫기
+      if (isInIframe()) setTimeout(closeOnce, 1200);
+    }, 350);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('afterprint', closeOnce);
+    };
   }, [autoPrint]);
 
   // Mark body with print portal class
@@ -150,8 +162,21 @@ export const TicketModal: React.FC<TicketModalProps> = ({
 
   return (
     <>
-      {/* On-Screen Modal View */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto no-print">
+      {/* 바로 인쇄 중 안내 (미리보기 창 대신 표시) */}
+      {autoPrint && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] no-print flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-900 text-white text-sm font-bold shadow-2xl">
+          <Printer className="w-4 h-4 text-emerald-400" />
+          <span>{applicant.name} 학생 배정 확인표 인쇄 중…</span>
+        </div>
+      )}
+
+      {/* On-Screen Modal View (바로 인쇄 모드에서는 화면에 보이지 않음) */}
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto no-print ${
+          autoPrint ? 'opacity-0 pointer-events-none' : ''
+        }`}
+        aria-hidden={autoPrint || undefined}
+      >
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[95vh]">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-800 text-white shrink-0">
